@@ -318,7 +318,7 @@ def build_5k_session_library() -> Dict[str, List[SessionTemplate]]:
     lib["Taper"].append(
         SessionTemplate(
             code="TP_EASY_30",
-            name="Easy 30' + 4x20" strides",
+            name="Easy 30' + 4x20\" strides",
             phase="Taper",
             main_zones=["E", "R"],
             warmup=[ContinuousSegment(duration_min=10, zone="E")],
