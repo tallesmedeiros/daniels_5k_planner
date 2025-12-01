@@ -12,6 +12,7 @@ from .pacing import (
     weekly_plan_to_workouts,
     workouts_to_dataframe,
     format_plan_for_console,
+    format_plan_as_table,
     print_plan,
 )
 from .feedback import (

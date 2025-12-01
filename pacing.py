@@ -196,6 +196,32 @@ def format_plan_for_console(plan_df: pd.DataFrame) -> str:
     return "\n".join(lines).rstrip()
 
 
+def format_plan_as_table(plan_df: pd.DataFrame, columns: List[str] | None = None) -> str:
+    """Gera uma tabela textual completa, sem truncar a descrição das sessões.
+
+    Args:
+        plan_df: DataFrame retornado por ``workouts_to_dataframe`` ou ``generate_5k_plan_from_race``.
+        columns: colunas que devem aparecer na tabela. Se ``None``, todas as colunas são usadas.
+
+    Returns:
+        Uma string com a tabela formatada usando ``pandas.DataFrame.to_string`` e
+        sem limite de largura de coluna, garantindo que a descrição apareça por completo.
+    """
+
+    if plan_df.empty:
+        return "Nenhuma sessão encontrada para o período informado."
+
+    cols = columns if columns is not None else list(plan_df.columns)
+
+    # Evita que quebras de linha no texto da descrição baguncem a tabela, mas mantém o conteúdo.
+    df_clean = plan_df.copy()
+    if "description" in df_clean.columns:
+        df_clean["description"] = df_clean["description"].astype(str).str.replace("\n", " | ")
+
+    with pd.option_context("display.max_colwidth", None, "display.width", None):
+        return df_clean[cols].to_string(index=False)
+
+
 def print_plan(plan_df: pd.DataFrame) -> None:
     """Imprime o plano em formato amigável para leitura no terminal."""
 
