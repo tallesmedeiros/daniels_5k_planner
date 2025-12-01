@@ -4,7 +4,14 @@ Bem-vindo ao **Daniels 5K Planner**, um micro toolkit em Python que converte tem
 
 ## 📚 Visão geral rápida
 - 🔢 **Estimativa fisiológica**: converta um resultado de prova em VDOT e derive zonas oficiais (E/M/T/I/R).
-- 🧭 **Fases de ciclo**: sequência automática de Base → EarlyQ → Threshold → Interval → Repetition → RS → Taper.
+- 🧭 **Fases de ciclo**: sequência automática de:
+  - Base
+  - EarlyQ
+  - Threshold
+  - Interval
+  - Repetition
+  - RS
+  - Taper
 - 📅 **Planejamento semanal**: escolha de sessões por fase, distribuição em dias e ajuste por volume-alvo.
 - 🏷️ **Workouts anotados**: cada sessão recebe ritmos alvo, descrição human-friendly e metadados prontos para análise (DataFrame).
 - 🔁 **Feedback**: módulo para ajustar volumes e carga de qualidade a partir de dados semanais.
