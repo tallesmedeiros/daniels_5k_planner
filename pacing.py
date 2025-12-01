@@ -54,57 +54,55 @@ class WorkoutPaceAnnotator:
         return template
 
     def describe_session(self, template: SessionTemplate) -> str:
-        lines = [f"{template.name} ({template.phase})"]
+        def format_continuous(seg: ContinuousSegment) -> str:
+            base = (
+                f"{seg.distance_km:.1f} km"
+                if seg.distance_km is not None
+                else f"{seg.duration_min:.0f} min"
+            )
+            detail = f"@ {seg.pace_slow_str}–{seg.pace_fast_str} ({seg.zone})"
+            extra = f" · {seg.description}" if seg.description else ""
+            return f"{base} {detail}{extra}"
+
+        def format_interval(block: IntervalBlock) -> str:
+            work = (
+                f"{block.work_distance_m:.0f} m"
+                if block.work_distance_m is not None
+                else f"{block.work_duration_min:.0f} min"
+            )
+            rec = (
+                f"{block.recovery_distance_m:.0f} m"
+                if block.recovery_distance_m is not None
+                else f"{block.recovery_duration_min:.0f} min"
+            )
+            work_pace = f"@ {block.work_pace_slow_str}–{block.work_pace_fast_str} ({block.work_zone})"
+            rec_pace = f"@ {block.rec_pace_slow_str}–{block.rec_pace_fast_str} ({block.recovery_zone})"
+            block_desc = f" · {block.description}" if block.description else ""
+            return f"{block.reps} x {work} {work_pace} | rec {rec} {rec_pace}{block_desc}"
+
+        lines = [f"🏃‍♀️ {template.name} · fase {template.phase}"]
+        if template.description:
+            lines.append(f"   🎯 {template.description}")
+        lines.append(f"   🔑 Zonas principais: {'/'.join(template.main_zones)}")
+
         if template.warmup:
-            lines.append("  Aquecimento:")
+            lines.append("   🔥 Aquecimento:")
             for seg in template.warmup:
-                if seg.distance_km is not None:
-                    lines.append(
-                        f"    - {seg.distance_km:.1f} km @ {seg.pace_slow_str}–{seg.pace_fast_str} ({seg.zone})"
-                    )
-                else:
-                    lines.append(
-                        f"    - {seg.duration_min:.0f} min @ {seg.pace_slow_str}–{seg.pace_fast_str} ({seg.zone})"
-                    )
+                lines.append(f"      • {format_continuous(seg)}")
+
         if template.main:
-            lines.append("  Parte principal:")
+            lines.append("   🧭 Parte principal:")
             for item in template.main:
                 if isinstance(item, ContinuousSegment):
-                    if item.distance_km is not None:
-                        lines.append(
-                            f"    - {item.distance_km:.1f} km @ {item.pace_slow_str}–{item.pace_fast_str} ({item.zone})"
-                        )
-                    else:
-                        lines.append(
-                            f"    - {item.duration_min:.0f} min @ {item.pace_slow_str}–{item.pace_fast_str} ({item.zone})"
-                        )
+                    lines.append(f"      • {format_continuous(item)}")
                 elif isinstance(item, IntervalBlock):
-                    rep_str = []
-                    if item.work_distance_m is not None:
-                        rep_str.append(f"{item.work_distance_m:.0f} m")
-                    else:
-                        rep_str.append(f"{item.work_duration_min:.0f} min")
-                    rep_str.append(f"@ {item.work_pace_slow_str}–{item.work_pace_fast_str} ({item.work_zone})")
-                    rec_str = []
-                    if item.recovery_distance_m is not None:
-                        rec_str.append(f"{item.recovery_distance_m:.0f} m")
-                    else:
-                        rec_str.append(f"{item.recovery_duration_min:.0f} min")
-                    rec_str.append(f"@ {item.rec_pace_slow_str}–{item.rec_pace_fast_str} ({item.recovery_zone})")
-                    lines.append(
-                        f"    - {item.reps} x {' '.join(rep_str)} rec {' '.join(rec_str)}"
-                    )
+                    lines.append(f"      • {format_interval(item)}")
+
         if template.cooldown:
-            lines.append("  Desaquecimento:")
+            lines.append("   🧊 Desaquecimento:")
             for seg in template.cooldown:
-                if seg.distance_km is not None:
-                    lines.append(
-                        f"    - {seg.distance_km:.1f} km @ {seg.pace_slow_str}–{seg.pace_fast_str} ({seg.zone})"
-                    )
-                else:
-                    lines.append(
-                        f"    - {seg.duration_min:.0f} min @ {seg.pace_slow_str}–{seg.pace_fast_str} ({seg.zone})"
-                    )
+                lines.append(f"      • {format_continuous(seg)}")
+
         return "\n".join(lines)
 
 
@@ -168,3 +166,37 @@ def workouts_to_dataframe(workouts: List[Workout]) -> pd.DataFrame:
         "planned_distance_km", "description",
     ]
     return df[cols]
+
+
+def format_plan_for_console(plan_df: pd.DataFrame) -> str:
+    """Formata um DataFrame de plano semanal em blocos legíveis no console."""
+
+    if plan_df.empty:
+        return "Nenhuma sessão encontrada para o período informado."
+
+    lines: List[str] = []
+    for week, week_df in plan_df.groupby("week"):
+        phases = week_df["phase"].unique()
+        phase_label = "/".join(phases)
+        lines.append(f"📅 Semana {week} · Fase: {phase_label}")
+
+        for _, row in week_df.sort_values("day_of_week").iterrows():
+            flag = "🔥" if row["is_quality"] else "🌿"
+            dist = f"{row['planned_distance_km']:.1f} km"
+            lines.append(
+                f"  {flag} {row['weekday']}: {row['session_name']} ({row['session_code']})"
+            )
+            lines.append(
+                f"     → Zonas {row['main_zones']} · Distância alvo: {dist} · Fase {row['phase']}"
+            )
+            for desc_line in str(row["description"]).splitlines():
+                lines.append(f"     ↳ {desc_line}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip()
+
+
+def print_plan(plan_df: pd.DataFrame) -> None:
+    """Imprime o plano em formato amigável para leitura no terminal."""
+
+    print(format_plan_for_console(plan_df))
