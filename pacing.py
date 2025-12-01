@@ -219,7 +219,11 @@ def format_plan_as_table(plan_df: pd.DataFrame, columns: List[str] | None = None
         df_clean["description"] = df_clean["description"].astype(str).str.replace("\n", " | ")
 
     with pd.option_context("display.max_colwidth", None, "display.width", None):
-        return df_clean[cols].to_string(index=False)
+        # ``line_width=None`` evita que pandas quebre a linha após um número
+        # fixo de caracteres, o que poderia cortar visualmente a coluna de
+        # descrição em terminais estreitos. ``max_colwidth=None`` garante que
+        # o texto não seja truncado com reticências.
+        return df_clean[cols].to_string(index=False, line_width=None, max_colwidth=None)
 
 
 def print_plan(plan_df: pd.DataFrame) -> None:
