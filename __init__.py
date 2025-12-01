@@ -7,7 +7,14 @@ from .sessions import (
 )
 from .selection import WeeklySessionSelector
 from .volume import WeeklyVolumePlanner
-from .pacing import WorkoutPaceAnnotator, weekly_plan_to_workouts, workouts_to_dataframe
+from .pacing import (
+    WorkoutPaceAnnotator,
+    weekly_plan_to_workouts,
+    workouts_to_dataframe,
+    format_plan_for_console,
+    format_plan_as_table,
+    print_plan,
+)
 from .feedback import (
     CompletedWorkoutFeedback, WeeklyFeedback,
     FeedbackAdjustment, FeedbackEngine
