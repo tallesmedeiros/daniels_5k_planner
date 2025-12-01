@@ -175,10 +175,20 @@ def format_plan_for_console(plan_df: pd.DataFrame) -> str:
         return "Nenhuma sessão encontrada para o período informado."
 
     lines: List[str] = []
-    for week, week_df in plan_df.groupby("week"):
+    last_phase: str | None = None
+    sorted_plan = plan_df.sort_values(["week", "day_of_week"])
+
+    for week, week_df in sorted_plan.groupby("week"):
         phases = week_df["phase"].unique()
         phase_label = "/".join(phases)
-        lines.append(f"📅 Semana {week} · Fase: {phase_label}")
+
+        if phase_label != last_phase:
+            if last_phase is not None:
+                lines.append("")
+            lines.append(f"🏁 Fase: {phase_label}")
+            last_phase = phase_label
+
+        lines.append(f"📅 Semana {week}")
 
         for _, row in week_df.sort_values("day_of_week").iterrows():
             flag = "🔥" if row["is_quality"] else "🌿"
@@ -187,13 +197,13 @@ def format_plan_for_console(plan_df: pd.DataFrame) -> str:
                 f"  {flag} {row['weekday']}: {row['session_name']} ({row['session_code']})"
             )
             lines.append(
-                f"     → Zonas {row['main_zones']} · Distância alvo: {dist} · Fase {row['phase']}"
+                f"     → Zonas {row['main_zones']} · Distância alvo: {dist}"
             )
             for desc_line in str(row["description"]).splitlines():
                 lines.append(f"     ↳ {desc_line}")
-        lines.append("")
 
-    return "\n".join(lines).rstrip()
+    lines.append("")
+    return "\n".join(lines)
 
 
 def format_plan_as_table(plan_df: pd.DataFrame, columns: List[str] | None = None) -> str:
