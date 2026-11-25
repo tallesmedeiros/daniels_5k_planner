@@ -38,14 +38,46 @@ class WeeklyVolumePlanner:
         }
         return phase_factors.get(phase, 1.00)
 
-    def compute_weekly_targets(self, phase_sequence: List[str]) -> List[float]:
+    def compute_weekly_targets(
+        self, phase_sequence: List[str], *, phase_driven: bool = False,
+    ) -> List[float]:
+        """Keep legacy long-plan volumes unless explicit phases drive the curve.
+
+        Short windows (<7 weeks) maintain the initial volume before phase
+        factors; they do not try to build from initial to peak volume.
+        Explicit windows apply the terminal taper only when Taper is present;
+        the existing intensity-related phase factors still apply.
+        """
         W = len(phase_sequence)
+        if phase_driven or W < 7:
+            return self._phase_driven_targets(phase_sequence)
         base_curve = self._base_volume_curve(W)
         targets = []
         for w, phase in enumerate(phase_sequence):
             Vw = base_curve[w]
             factor = self._phase_volume_factor(phase)
             targets.append(Vw * factor)
+        return targets
+
+    def _phase_driven_targets(self, phase_sequence: List[str]) -> List[float]:
+        W = len(phase_sequence)
+        training_weeks = sum(phase != "Taper" for phase in phase_sequence)
+        initial = self.athlete.initial_weekly_volume
+        peak = self.athlete.peak_weekly_volume
+        targets = []
+        training_index = 0
+        for phase in phase_sequence:
+            if phase == "Taper":
+                # Anchor the reduction to actual preceding load, never to a
+                # hypothetical peak that the athlete has not reached.
+                previous = targets[-1] if targets else initial
+                target = previous * self._phase_volume_factor("Taper")
+            else:
+                progress = training_index / max(training_weeks - 1, 1) if W >= 7 else 0.0
+                base = initial + (peak - initial) * progress
+                target = base * self._phase_volume_factor(phase)
+                training_index += 1
+            targets.append(target)
         return targets
 
     def apply_volume_to_plan(self, weekly_plan: List[Dict], weekly_targets: List[float]) -> List[Dict]:

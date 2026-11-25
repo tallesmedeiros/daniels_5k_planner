@@ -20,6 +20,8 @@ from .feedback import (
     FeedbackAdjustment, FeedbackEngine
 )
 from .facade_5k import (
+    Mesocycle,
+    build_5k_mesocycles,
     estimate_vdot_from_race,
     build_5k_phase_sequence_simple,
     generate_5k_plan_from_race,

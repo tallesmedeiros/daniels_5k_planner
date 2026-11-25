@@ -99,3 +99,10 @@ print(plan_df.head())
 
 ## 🤝 Contribuição
 Sinta-se livre para abrir issues ou PRs com novos templates de sessão, ajustes de curva de volume ou melhorias nas descrições. Bons treinos! 🏅
+
+## Mesociclos configuráveis e planos curtos
+
+O gerador aceita planejamentos a partir de **duas semanas**. O argumento opcional
+`mesocycles=[Mesocycle("Base", 4), Mesocycle("Threshold", 3)]` permite definir
+as fases e suas durações exatas. Consulte [PERIODIZATION.md](PERIODIZATION.md)
+para regras, exemplos, política de volume e instruções dos testes automatizados.
